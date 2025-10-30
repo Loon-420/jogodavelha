@@ -1,25 +1,12 @@
 {
-  "background_color": "#9333ea",
+  "background_color": "#ffffff",
   "dir": "ltr",
   "display": "standalone",
-  "name": "Jogo da Velha",
+  "name": "Jogo da Velha - Loon",
   "orientation": "portrait",
-  "scope": "/jogodavelha/",
-  "short_name": "Jogo Velha",
-  "start_url": "/jogodavelha/",
-  "theme_color": "#9333ea",
-  "lang": "pt",
-  "description": "Jogue contra IA, amigos ou online!",
-  "icons": [
-    {
-      "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ]
+  "scope": "/",
+  "short_name": "Loon",
+  "start_url": "/",
+  "theme_color": "#ffffff",
+  "lang": "pt"
 }
