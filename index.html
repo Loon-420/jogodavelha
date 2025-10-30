@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo da Velha</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .cell {
+            transition: all 0.3s ease;
+        }
+        .cell:hover:not(:disabled) {
+            transform: scale(1.05);
+        }
+        .winning-cell {
+            animation: pulse 0.5s ease-in-out;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-500">
+    
+    <!-- Menu Principal -->
+    <div id="menuScreen" class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full">
+            <div class="text-center mb-8">
+                <h1 class="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-cyan-500 mb-2">
+                    Jogo da Velha
+                </h1>
+                <p class="text-gray-600">Escolha um modo de jogo</p>
+            </div>
+
+            <div class="space-y-4">
+                <button onclick="showDifficulty()" class="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl py-4 px-6 flex items-center justify-between hover:shadow-lg transition transform hover:scale-105">
+                    <span class="font-semibold text-lg">👤 Jogar vs IA</span>
+                </button>
+
+                <button onclick="startGame('friend')" class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl py-4 px-6 flex items-center justify-between hover:shadow-lg transition transform hover:scale-105">
+                    <span class="font-semibold text-lg">👥 Jogar com Amigo</span>
+                </button>
+
+                <button onclick="showOnline()" class="w-full bg-gradient-to-r from-cyan-500 to-cyan-600 text-white rounded-xl py-4 px-6 flex items-center justify-between hover:shadow-lg transition transform hover:scale-105">
+                    <span class="font-semibold text-lg">🌐 Jogar Online</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tela de Dificuldade -->
+    <div id="difficultyScreen" class="hidden flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full">
+            <button onclick="showMenu()" class="mb-6 text-gray-600 hover:text-gray-800 flex items-center gap-2">
+                ← Voltar
+            </button>
+            
+            <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">Escolha a Dificuldade</h2>
+            
+            <div class="space-y-4">
+                <button onclick="startGame('ai', 'easy')" class="w-full bg-green-500 text-white rounded-xl py-4 px-6 font-semibold text-lg hover:bg-green-600 transition transform hover:scale-105">
+                    😊 Fácil
+                </button>
+                
+                <button onclick="startGame('ai', 'medium')" class="w-full bg-yellow-500 text-white rounded-xl py-4 px-6 font-semibold text-lg hover:bg-yellow-600 transition transform hover:scale-105">
+                    🤔 Médio
+                </button>
+                
+                <button onclick="startGame('ai', 'hard')" class="w-full bg-red-500 text-white rounded-xl py-4 px-6 font-semibold text-lg hover:bg-red-600 transition transform hover:scale-105">
+                    😈 Difícil
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tela Online -->
+    <div id="onlineScreen" class="hidden flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full">
+            <button onclick="showMenu()" class="mb-6 text-gray-600 hover:text-gray-800 flex items-center gap-2">
+                ← Voltar
+            </button>
+            
+            <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">Modo Online</h2>
+            
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-gray-700 font-semibold mb-2">Código da Sala:</label>
+                    <input type="text" id="roomCode" placeholder="Digite o código" class="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-cyan-500 focus:outline-none">
+                </div>
+                
+                <button onclick="joinOnlineGame()" class="w-full bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-xl py-4 px-6 font-semibold text-lg hover:shadow-lg transition transform hover:scale-105">
+                    Entrar na Sala
+                </button>
+                
+                <div class="relative">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-gray-300"></div>
+                    </div>
+                    <div class="relative flex justify-center text-sm">
+                        <span class="px-2 bg-white text-gray-500">ou</span>
+                    </div>
+                </div>
+                
+                <button onclick="createOnlineGame()" class="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl py-4 px-6 font-semibold text-lg hover:shadow-lg transition transform hover:scale-105">
+                    Criar Nova Sala
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tela de Jogo -->
+    <div id="gameScreen" class="hidden flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-3xl shadow-2xl p-6 max-w-lg w-full">
+            <div class="flex justify-between items-center mb-6">
+                <button onclick="showMenu()" class="text-gray-600 hover:text-gray-800 text-2xl">🏠</button>
+                <h2 id="gameTitle" class="text-2xl font-bold text-gray-800"></h2>
+                <button onclick="resetGame()" class="text-gray-600 hover:text-gray-800 text-2xl">🔄</button>
+            </div>
+
+            <div class="flex justify-around mb-6 bg-gray-100 rounded-xl p-4">
+                <div class="text-center">
+                    <p class="text-2xl mb-1">🏆</p>
+                    <p class="text-sm text-gray-600">X</p>
+                    <p id="scoreX" class="text-2xl font-bold text-gray-800">0</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-sm text-gray-600 mb-1">Empates</p>
+                    <p id="scoreDraw" class="text-2xl font-bold text-gray-800">0</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-2xl mb-1">🏆</p>
+                    <p class="text-sm text-gray-600">O</p>
+                    <p id="scoreO" class="text-2xl font-bold text-gray-800">0</p>
+                </div>
+            </div>
+
+            <div id="onlineInfo" class="hidden mb-4 text-center">
+                <p class="text-sm font-semibold text-gray-700">
+                    Você é: <span id="playerSymbol"></span>
+                    <span id="turnMessage"></span>
+                </p>
+            </div>
+
+            <div id="board" class="grid grid-cols-3 gap-3 mb-6"></div>
+
+            <div id="gameStatus" class="text-center"></div>
+        </div>
+    </div>
+
+    <script>
+        let gameState = {
+            mode: null,
+            difficulty: null,
+            board: Array(9).fill(null),
+            isXNext: true,
+            winner: null,
+            winningLine: [],
+            scores: { x: 0, o: 0, draws: 0 },
+            onlineRoom: '',
+            onlinePlayer: null,
+            isMyTurn: true,
+            onlineInterval: null
+        };
+
+        function showMenu() {
+            document.getElementById('menuScreen').classList.remove('hidden');
+            document.getElementById('difficultyScreen').classList.add('hidden');
+            document.getElementById('onlineScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.add('hidden');
+            if (gameState.onlineInterval) clearInterval(gameState.onlineInterval);
+            gameState = {
+                mode: null,
+                difficulty: null,
+                board: Array(9).fill(null),
+                isXNext: true,
+                winner: null,
+                winningLine: [],
+                scores: { x: 0, o: 0, draws: 0 },
+                onlineRoom: '',
+                onlinePlayer: null,
+                isMyTurn: true,
+                onlineInterval: null
+            };
+        }
+
+        function showDifficulty() {
+            document.getElementById('menuScreen').classList.add('hidden');
+            document.getElementById('difficultyScreen').classList.remove('hidden');
+        }
+
+        function showOnline() {
+            document.getElementById('menuScreen').classList.add('hidden');
+            document.getElementById('onlineScreen').classList.remove('hidden');
+        }
+
+        function startGame(mode, difficulty = null) {
+            gameState.mode = mode;
+            gameState.difficulty = difficulty;
+            
+            document.getElementById('menuScreen').classList.add('hidden');
+            document.getElementById('difficultyScreen').classList.add('hidden');
+            document.getElementById('onlineScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            
+            let title = mode === 'ai' ? `IA (${difficulty})` : 
+                        mode === 'friend' ? 'Amigo' : 
+                        `Online: ${gameState.onlineRoom}`;
+            document.getElementById('gameTitle').textContent = title;
+            
+            if (mode === 'online') {
+                document.getElementById('onlineInfo').classList.remove('hidden');
+                document.getElementById('playerSymbol').textContent = gameState.onlinePlayer;
+                document.getElementById('playerSymbol').className = gameState.onlinePlayer === 'X' ? 'text-blue-600' : 'text-red-600';
+                startOnlineSync();
+            } else {
+                document.getElementById('onlineInfo').classList.add('hidden');
+            }
+            
+            resetGame();
+        }
+
+        function createOnlineGame() {
+            const roomId = Math.random().toString(36).substring(7);
+            gameState.onlineRoom = roomId;
+            gameState.onlinePlayer = 'O';
+            gameState.isMyTurn = false;
+            startGame('online');
+        }
+
+        function joinOnlineGame() {
+            const roomCode = document.getElementById('roomCode').value.trim();
+            if (roomCode) {
+                gameState.onlineRoom = roomCode;
+                gameState.onlinePlayer = 'X';
+                gameState.isMyTurn = true;
+                startGame('online');
+            }
+        }
+
+        async function startOnlineSync() {
+            if (gameState.onlineInterval) clearInterval(gameState.onlineInterval);
+            
+            await loadOnlineGame();
+            gameState.onlineInterval = setInterval(loadOnlineGame, 2000);
+        }
+
+        async function loadOnlineGame() {
+            if (!gameState.onlineRoom) return;
+            try {
+                const result = await window.storage.get(`game:${gameState.onlineRoom}`, true);
+                if (result) {
+                    const gameData = JSON.parse(result.value);
+                    gameState.board = gameData.board;
+                    gameState.isXNext = gameData.isXNext;
+                    gameState.winner = gameData.winner;
+                    gameState.winningLine = gameData.winningLine || [];
+                    gameState.isMyTurn = gameData.isXNext === (gameState.onlinePlayer === 'X');
+                    renderBoard();
+                    updateStatus();
+                }
+            } catch (error) {
+                console.log('Aguardando outro jogador...');
+            }
+        }
+
+        async function saveOnlineGame() {
+            if (!gameState.onlineRoom) return;
+            const gameData = {
+                board: gameState.board,
+                isXNext: gameState.isXNext,
+                winner: gameState.winner,
+                winningLine: gameState.winningLine
+            };
+            try {
+                await window.storage.set(`game:${gameState.onlineRoom}`, JSON.stringify(gameData), true);
+            } catch (error) {
+                console.error('Erro ao salvar jogo online');
+            }
+        }
+
+        function renderBoard() {
+            const boardEl = document.getElementById('board');
+            boardEl.innerHTML = '';
+            
+            gameState.board.forEach((cell, i) => {
+                const button = document.createElement('button');
+                button.className = `cell aspect-square rounded-xl text-5xl font-bold transition-all ${
+                    gameState.winningLine.includes(i) ? 
+                    'bg-gradient-to-br from-yellow-300 to-yellow-500 shadow-lg winning-cell' : 
+                    'bg-gray-100 hover:bg-gray-200'
+                } ${cell === 'X' ? 'text-blue-600' : 'text-red-600'}`;
+                button.textContent = cell || '';
+                button.onclick = () => handleClick(i);
+                
+                if (gameState.winner || (gameState.mode === 'online' && !gameState.isMyTurn)) {
+                    button.disabled = true;
+                    button.classList.add('cursor-not-allowed');
+                }
+                
+                boardEl.appendChild(button);
+            });
+            
+            updateScores();
+        }
+
+        function handleClick(index) {
+            if (gameState.board[index] || gameState.winner) return;
+            if (gameState.mode === 'ai' && !gameState.isXNext) return;
+            if (gameState.mode === 'online' && !gameState.isMyTurn) return;
+            
+            gameState.board[index] = gameState.isXNext ? 'X' : 'O';
+            
+            const result = calculateWinner(gameState.board);
+            if (result) {
+                gameState.winner = result.winner;
+                gameState.winningLine = result.line;
+                updateScores();
+            } else if (gameState.board.every(cell => cell)) {
+                gameState.winner = 'draw';
+                updateScores();
+            }
+            
+            gameState.isXNext = !gameState.isXNext;
+            
+            if (gameState.mode === 'online') {
+                gameState.isMyTurn = false;
+                saveOnlineGame();
+            }
+            
+            renderBoard();
+            updateStatus();
+            
+            if (gameState.mode === 'ai' && !gameState.isXNext && !gameState.winner) {
+                setTimeout(makeAIMove, 500);
+            }
+        }
+
+        function calculateWinner(squares) {
+            const lines = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+            
+            for (let line of lines) {
+                const [a, b, c] = line;
+                if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
+                    return { winner: squares[a], line };
+                }
+            }
+            return null;
+        }
+
+        function makeAIMove() {
+            if (gameState.winner || gameState.board.every(cell => cell)) return;
+            
+            let move;
+            if (gameState.difficulty === 'easy') {
+                move = getRandomMove();
+            } else if (gameState.difficulty === 'medium') {
+                move = Math.random() < 0.5 ? getBestMove() : getRandomMove();
+            } else {
+                move = getBestMove();
+            }
+            
+            if (move !== -1) {
+                gameState.board[move] = 'O';
+                
+                const result = calculateWinner(gameState.board);
+                if (result) {
+                    gameState.winner = result.winner;
+                    gameState.winningLine = result.line;
+                    updateScores();
+                } else if (gameState.board.every(cell => cell)) {
+                    gameState.winner = 'draw';
+                    updateScores();
+                }
+                
+                gameState.isXNext = true;
+                renderBoard();
+                updateStatus();
+            }
+        }
+
+        function getRandomMove() {
+            const available = gameState.board.map((cell, i) => cell === null ? i : null).filter(i => i !== null);
+            return available[Math.floor(Math.random() * available.length)] ?? -1;
+        }
+
+        function getBestMove() {
+            let bestScore = -Infinity;
+            let move = -1;
+            
+            for (let i = 0; i < 9; i++) {
+                if (gameState.board[i] === null) {
+                    gameState.board[i] = 'O';
+                    const score = minimax(gameState.board, 0, false);
+                    gameState.board[i] = null;
+                    
+                    if (score > bestScore) {
+                        bestScore = score;
+                        move = i;
+                    }
+                }
+            }
+            return move;
+        }
+
+        function minimax(squares, depth, isMaximizing) {
+            const result = calculateWinner(squares);
+            if (result) return result.winner === 'O' ? 10 - depth : depth - 10;
+            if (squares.every(cell => cell)) return 0;
+            
+            if (isMaximizing) {
+                let bestScore = -Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (squares[i] === null) {
+                        squares[i] = 'O';
+                        bestScore = Math.max(bestScore, minimax(squares, depth + 1, false));
+                        squares[i] = null;
+                    }
+                }
+                return bestScore;
+            } else {
+                let bestScore = Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (squares[i] === null) {
+                        squares[i] = 'X';
+                        bestScore = Math.min(bestScore, minimax(squares, depth + 1, true));
+                        squares[i] = null;
+                    }
+                }
+                return bestScore;
+            }
+        }
+
+        function updateScores() {
+            if (gameState.winner === 'X') {
+                gameState.scores.x++;
+            } else if (gameState.winner === 'O') {
+                gameState.scores.o++;
+            } else if (gameState.winner === 'draw') {
+                gameState.scores.draws++;
+            }
+            
+            document.getElementById('scoreX').textContent = gameState.scores.x;
+            document.getElementById('scoreO').textContent = gameState.scores.o;
+            document.getElementById('scoreDraw').textContent = gameState.scores.draws;
+        }
+
+        function updateStatus() {
+            const statusEl = document.getElementById('gameStatus');
+            
+            if (gameState.mode === 'online') {
+                document.getElementById('turnMessage').textContent = 
+                    gameState.isMyTurn ? '' : ' (aguarde sua vez)';
+            }
+            
+            if (gameState.winner) {
+                statusEl.innerHTML = `
+                    <div class="bg-gradient-to-r from-yellow-400 to-yellow-500 text-white rounded-xl p-4 mb-4">
+                        <p class="text-2xl font-bold">
+                            ${gameState.winner === 'draw' ? '🤝 Empate!' : `🎉 ${gameState.winner} Venceu!`}
+                        </p>
+                    </div>
+                    <button onclick="resetGame()" class="bg-gradient-to-r from-purple-500 to-cyan-500 text-white rounded-xl py-3 px-8 font-semibold hover:shadow-lg transition transform hover:scale-105">
+                        Jogar Novamente
+                    </button>
+                `;
+            } else {
+                statusEl.innerHTML = `
+                    <p class="text-lg text-gray-700">
+                        Vez de: <span class="font-bold ${gameState.isXNext ? 'text-blue-600' : 'text-red-600'}">
+                            ${gameState.isXNext ? 'X' : 'O'}
+                        </span>
+                    </p>
+                `;
+            }
+        }
+
+        function resetGame() {
+            gameState.board = Array(9).fill(null);
+            gameState.isXNext = true;
+            gameState.winner = null;
+            gameState.winningLine = [];
+            
+            if (gameState.mode === 'online') {
+                gameState.isMyTurn = gameState.onlinePlayer === 'X';
+                saveOnlineGame();
+            }
+            
+            renderBoard();
+            updateStatus();
+        }
+
+        // Inicializar
+        showMenu();
+    </script>
+</body>
+</html>
