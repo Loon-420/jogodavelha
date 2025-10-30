@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Jogo da Velha - Jogue contra IA, amigos ou online!">
+    <meta name="theme-color" content="#9333ea">
     <title>Jogo da Velha</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAAsTAAALEwEAmpwYAAADMklEQVR4nO2bS2sUQRDHf5qNxgfGRxQ1HhQRBPHkQfDkRfDgyYMgePEgCF48eBAELx4EwYsHQfDiQRC8eBAEX3jQg4oYE1FjfMS4ZmPMJiYxJhtTMh0Yw+zOTE9Pz2zmB3UKuvqr+k9VdVcPGAwGg8FgMBgMBoPBYDAYDAZDjdMJzAErgQ5gErAImAysAFYD64CNwBZgO7AT2APsAw4Ah4GjwAngJHAKOA2cAc4C54ALwEXgEnAZuAJcBa4B14EbwE3gFnAbuAPcBe4B94EHwEPgEfAYeAI8BZ4Bz4EXwEvgFfAaeAO8Bd4B74EPwEfgE/AZ+AJ8Bb4B34EfwE/gF/Ab+AP8Bf4Bf+0+2H3ZNWz+Uz/2AP3AADAIDAGPJY+Bx8BTYBgYAUaBMeAZMA68B14AL4FXwGvgDfAWeAe8Bz4AH4FPwGfgC/AV+AZ8B34AP4FfwG/gD/AX+Af8tf2y+7Rr2jXtmnZtu7Zd365h17Jr2TWVXiUA7cAkYCGwBFgKLAOWAyuAlcAqYDWwBlgLrAPWAxuATcBmYAuwFdgG7AB2AruA3cAeYC+wD9gPHAAOAoeAw8AR4ChwDDgOnABOAqeA08AZ4CxwDjgPXAAuApeAy8AV4CpwDbgO3ABuAreA28Ad4C5wD7gPPAAeAo+Ax8AT4CnwDHgOvABeAq+A18Ab4C3wDngPfAA+Ap+Az8AX4CvwDfgO/AB+Ar+A38Af4C/wD/hr+233a/dt92/3cdD2c1DZ7xGgH+gDBoEhYBh4IhkBRoEx4JnkOTAOvABeAi+BV8Br4A3wFngHvAc+AB+BT8Bn4AvwFfgGfAd+AD+BX8Bv4A/wF/gH/Lf7tvu2+7f7OGT7OWzzdxRYAywDlksWAguBRZLFwBJgqWQZsFyyAlgJrAJWA2ska4F1wHpgA7AJ2AxsAbYC24AdwE5gF7Ab2APsBfYB+4EDwEHgEHAYOAIcBY4Bx4ETwEngFHAaOAOcBc4B54ELwEXgEnAZuAJcBa4B14EbwE3gFnAbuAPcBe4B94EHwEPgEfAYeAI8BZ4Bz4EXwEvgFfAaeAO8Bd4B74EPwEfgE/AZ+AJ8Bb4B34EfwE/gF/Ab+AP8Bf4B/+2+7b7t/u0+Dtl+Div7fQMwGAwGg8FgMBgMBoPBYDAY/gdeA1Ue++2DQQAAAABJRU5ErkJggg==">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -152,6 +156,11 @@
     </div>
 
     <script>
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(err => console.log('SW registration failed'));
+        }
+
         let gameState = {
             mode: null,
             difficulty: null,
@@ -249,7 +258,7 @@
         }
 
         async function loadOnlineGame() {
-            if (!gameState.onlineRoom) return;
+            if (!gameState.onlineRoom || !window.storage) return;
             try {
                 const result = await window.storage.get(`game:${gameState.onlineRoom}`, true);
                 if (result) {
@@ -268,7 +277,7 @@
         }
 
         async function saveOnlineGame() {
-            if (!gameState.onlineRoom) return;
+            if (!gameState.onlineRoom || !window.storage) return;
             const gameData = {
                 board: gameState.board,
                 isXNext: gameState.isXNext,
