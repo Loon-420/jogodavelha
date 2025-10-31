@@ -7,8 +7,9 @@
     <meta name="theme-color" content="#9333ea">
     <title>Jogo da Velha</title>
     <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAAsTAAALEwEAmpwYAAADMklEQVR4nO2bS2sUQRDHf5qNxgfGRxQ1HhQRBPHkQfDkRfDgyYMgePEgCF48eBAELx4EwYsHQfDiQRC8eBAEX3jQg4oYE1FjfMS4ZmPMJiYxJhtTMh0Yw+zOTE9Pz2zmB3UKuvqr+k9VdVcPGAwGg8FgMBgMBoPBYDAYDAZDjdMJzAErgQ5gErAImAysAFYD64CNwBZgO7AT2APsAw4Ah4GjwAngJHAKOA2cAc4C54ALwEXgEnAZuAJcBa4B14EbwE3gFnAbuAPcBe4B94EHwEPgEfAYeAI8BZ4Bz4EXwEvgFfAaeAO8Bd4B74EPwEfgE/AZ+AJ8Bb4B34EfwE/gF/Ab+AP8Bf4Bf+0+2H3ZNWz+Uz/2AP3AADAIDAGPJY+Bx8BTYBgYAUaBMeAZMA68B14AL4FXwGvgDfAWeAe8Bz4AH4FPwGfgC/AV+AZ8B34AP4FfwG/gD/AX+Af8tf2y+7Rr2jXtmnZtu7Zd365h17Jr2TWVXiUA7cAkYCGwBFgKLAOWAyuAlcAqYDWwBlgLrAPWAxuATcBmYAuwFdgG7AB2AruA3cAeYC+wD9gPHAAOAoeAw8AR4ChwDDgOnABOAqeA08AZ4CxwDjgPXAAuApeAy8AV4CpwDbgO3ABuAreA28Ad4C5wD7gPPAAeAo+Ax8AT4CnwDHgOvABeAq+A18Ab4C3wDngPfAA+Ap+Az8AX4CvwDfgO/AB+Ar+A38Af4C/wD/hr+233a/dt92/3cdD2c1DZ7xGgH+gDBoEhYBh4IhkBRoEx4JnkOTAOvABeAi+BV8Br4A3wFngHvAc+AB+BT8Bn4AvwFfgGfAd+AD+BX8Bv4A/wF/gH/Lf7tvu2+7f7OGT7OWzzdxRYAywDlksWAguBRZLFwBJgqWQZsFyyAlgJrAJWA2ska4F1wHpgA7AJ2AxsAbYC24AdwE5gF7Ab2APsBfYB+4EDwEHgEHAYOAIcBY4Bx4ETwEngFHAaOAOcBc4B54ELwEXgEnAZuAJcBa4B14EbwE3gFnAbuAPcBe4B94EHwEPgEfAYeAI8BZ4Bz4EXwEvgFfAaeAO8Bd4B74EPwEfgE/AZ+AJ8Bb4B34EfwE/gF/Ab+AP8Bf4B/+2+7b7t/u0+Dtl+Div7fQMwGAwGg8FgMBgMBoPBYDAY/gdeA1Ue++2DQQAAAABJRU5ErkJggg==">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -156,6 +157,26 @@
     </div>
 
     <script>
+        // Configuração Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBXyv8qJ7_k3pYxZ2mN1RwQc5vH9tE6fL0",
+            authDomain: "jogo-velha-online.firebaseapp.com",
+            databaseURL: "https://jogo-velha-online-default-rtdb.firebaseio.com",
+            projectId: "jogo-velha-online",
+            storageBucket: "jogo-velha-online.appspot.com",
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:abcdef123456"
+        };
+
+        // Inicializar Firebase
+        let database;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            database = firebase.database();
+        } catch (error) {
+            console.log("Firebase não disponível - modo online desabilitado");
+        }
+
         // Service Worker Registration
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js').catch(err => console.log('SW registration failed'));
@@ -172,7 +193,7 @@
             onlineRoom: '',
             onlinePlayer: null,
             isMyTurn: true,
-            onlineInterval: null
+            onlineListener: null
         };
 
         function showMenu() {
@@ -180,7 +201,13 @@
             document.getElementById('difficultyScreen').classList.add('hidden');
             document.getElementById('onlineScreen').classList.add('hidden');
             document.getElementById('gameScreen').classList.add('hidden');
-            if (gameState.onlineInterval) clearInterval(gameState.onlineInterval);
+            
+            // Remover listener do Firebase
+            if (gameState.onlineListener) {
+                gameState.onlineListener.off();
+                gameState.onlineListener = null;
+            }
+            
             gameState = {
                 mode: null,
                 difficulty: null,
@@ -192,7 +219,7 @@
                 onlineRoom: '',
                 onlinePlayer: null,
                 isMyTurn: true,
-                onlineInterval: null
+                onlineListener: null
             };
         }
 
@@ -202,6 +229,10 @@
         }
 
         function showOnline() {
+            if (!database) {
+                alert('Modo online não disponível. Verifique sua conexão com a internet.');
+                return;
+            }
             document.getElementById('menuScreen').classList.add('hidden');
             document.getElementById('onlineScreen').classList.remove('hidden');
         }
@@ -233,62 +264,90 @@
         }
 
         function createOnlineGame() {
-            const roomId = Math.random().toString(36).substring(7);
+            const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
             gameState.onlineRoom = roomId;
-            gameState.onlinePlayer = 'O';
-            gameState.isMyTurn = false;
-            startGame('online');
+            gameState.onlinePlayer = 'X';
+            gameState.isMyTurn = true;
+            
+            // Criar sala no Firebase
+            database.ref('rooms/' + roomId).set({
+                board: Array(9).fill(null),
+                isXNext: true,
+                winner: null,
+                winningLine: [],
+                players: 1,
+                createdAt: Date.now()
+            }).then(() => {
+                startGame('online');
+            }).catch(error => {
+                alert('Erro ao criar sala: ' + error.message);
+            });
         }
 
         function joinOnlineGame() {
-            const roomCode = document.getElementById('roomCode').value.trim();
-            if (roomCode) {
-                gameState.onlineRoom = roomCode;
-                gameState.onlinePlayer = 'X';
-                gameState.isMyTurn = true;
-                startGame('online');
+            const roomCode = document.getElementById('roomCode').value.trim().toUpperCase();
+            if (!roomCode) {
+                alert('Digite o código da sala!');
+                return;
             }
-        }
-
-        async function startOnlineSync() {
-            if (gameState.onlineInterval) clearInterval(gameState.onlineInterval);
             
-            await loadOnlineGame();
-            gameState.onlineInterval = setInterval(loadOnlineGame, 2000);
+            // Verificar se sala existe
+            database.ref('rooms/' + roomCode).once('value').then(snapshot => {
+                if (snapshot.exists()) {
+                    const roomData = snapshot.val();
+                    if (roomData.players >= 2) {
+                        alert('Sala cheia! Tente outra sala.');
+                        return;
+                    }
+                    
+                    gameState.onlineRoom = roomCode;
+                    gameState.onlinePlayer = 'O';
+                    gameState.isMyTurn = false;
+                    
+                    // Atualizar número de jogadores
+                    database.ref('rooms/' + roomCode + '/players').set(2);
+                    
+                    startGame('online');
+                } else {
+                    alert('Sala não encontrada! Verifique o código.');
+                }
+            }).catch(error => {
+                alert('Erro ao entrar na sala: ' + error.message);
+            });
         }
 
-        async function loadOnlineGame() {
-            if (!gameState.onlineRoom || !window.storage) return;
-            try {
-                const result = await window.storage.get(`game:${gameState.onlineRoom}`, true);
-                if (result) {
-                    const gameData = JSON.parse(result.value);
-                    gameState.board = gameData.board;
-                    gameState.isXNext = gameData.isXNext;
-                    gameState.winner = gameData.winner;
-                    gameState.winningLine = gameData.winningLine || [];
-                    gameState.isMyTurn = gameData.isXNext === (gameState.onlinePlayer === 'X');
+        function startOnlineSync() {
+            if (!database || !gameState.onlineRoom) return;
+            
+            const roomRef = database.ref('rooms/' + gameState.onlineRoom);
+            
+            // Escutar mudanças em tempo real
+            gameState.onlineListener = roomRef;
+            roomRef.on('value', snapshot => {
+                const data = snapshot.val();
+                if (data) {
+                    gameState.board = data.board || Array(9).fill(null);
+                    gameState.isXNext = data.isXNext;
+                    gameState.winner = data.winner;
+                    gameState.winningLine = data.winningLine || [];
+                    gameState.isMyTurn = (data.isXNext && gameState.onlinePlayer === 'X') || 
+                                         (!data.isXNext && gameState.onlinePlayer === 'O');
+                    
                     renderBoard();
                     updateStatus();
                 }
-            } catch (error) {
-                console.log('Aguardando outro jogador...');
-            }
+            });
         }
 
-        async function saveOnlineGame() {
-            if (!gameState.onlineRoom || !window.storage) return;
-            const gameData = {
+        function saveOnlineGame() {
+            if (!database || !gameState.onlineRoom) return;
+            
+            database.ref('rooms/' + gameState.onlineRoom).update({
                 board: gameState.board,
                 isXNext: gameState.isXNext,
                 winner: gameState.winner,
                 winningLine: gameState.winningLine
-            };
-            try {
-                await window.storage.set(`game:${gameState.onlineRoom}`, JSON.stringify(gameData), true);
-            } catch (error) {
-                console.error('Erro ao salvar jogo online');
-            }
+            });
         }
 
         function renderBoard() {
@@ -336,7 +395,6 @@
             gameState.isXNext = !gameState.isXNext;
             
             if (gameState.mode === 'online') {
-                gameState.isMyTurn = false;
                 saveOnlineGame();
             }
             
@@ -466,7 +524,7 @@
             
             if (gameState.mode === 'online') {
                 document.getElementById('turnMessage').textContent = 
-                    gameState.isMyTurn ? '' : ' (aguarde sua vez)';
+                    gameState.isMyTurn ? ' (sua vez!)' : ' (aguarde...)';
             }
             
             if (gameState.winner) {
